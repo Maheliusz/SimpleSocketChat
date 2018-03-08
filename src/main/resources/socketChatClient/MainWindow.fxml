@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.layout.AnchorPane?>
+
+<AnchorPane maxHeight="680.0" maxWidth="600.0" prefHeight="680.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="socketChatClient.controller.MainWindowController">
+    <ListView prefHeight="370.0" prefWidth="600.0" layoutY="5.0" fx:id="messageList"/>
+    <TextArea prefHeight="200.0" prefWidth="600.0" layoutY="385.0" fx:id="textArea"/>
+    <Button prefHeight="80.0" prefWidth="185.0" layoutY="590.0" layoutX="15.0" onAction="#handleSendByTcpAction" text="Send by TCP"/>
+    <Button prefHeight="80.0" prefWidth="185.0" layoutY="590.0" layoutX="205.0" onAction="#handleSendByUdpAction" text="Send by UDP"/>
+    <Button prefHeight="80.0" prefWidth="185.0" layoutY="590.0" layoutX="395.0" onAction="#handleMulticastSendAction" text="Send by UDP Multicast"/>
+</AnchorPane>
