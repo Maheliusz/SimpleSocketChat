@@ -1,5 +1,6 @@
 package socketChatClient.controller;
 
+import containers.DatagramSocketInfo;
 import containers.Message;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -13,7 +14,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
+import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.List;
 
 public class MainWindowController {
     @FXML
@@ -23,10 +26,7 @@ public class MainWindowController {
 
     private AppController appController;
     private String clientName;
-
-    public void setAppController(AppController appController) {
-        this.appController = appController;
-    }
+    private List<DatagramSocketInfo> infoList;
 
     public void initializeMessageList(ObservableList<Message> sourceList) {
         messageList.setCellFactory(lv -> new ListCell<Message>() {
@@ -41,10 +41,10 @@ public class MainWindowController {
     }
 
     public void handleSendByTcpAction(ActionEvent actionEvent) {
+        if (textArea.getText().trim().equals("")) return;
         Message message = initializeMessage();
-        ObjectOutputStream os;
         try {
-            os = new ObjectOutputStream(appController.getTcpsocket().getOutputStream());
+            ObjectOutputStream os = new ObjectOutputStream(appController.getTcpsocket().getOutputStream());
             os.writeObject(message);
         } catch (IOException e) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -56,13 +56,10 @@ public class MainWindowController {
     }
 
     public void handleMulticastSendAction(ActionEvent actionEvent) {
-
-        textArea.setText("");
-    }
-
-    public void handleSendByUdpAction(ActionEvent actionEvent) {
-        Message message = initializeMessage();
+        if (textArea.getText().trim().equals("")) return;
+        /*Message message = initializeMessage();
         try {
+            message.message = Character.toString((char) 0x02);
             ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
             ObjectOutputStream os = new ObjectOutputStream(byteStream);
             os.writeObject(message);
@@ -76,12 +73,41 @@ public class MainWindowController {
             alert.setTitle("UDP Send Error");
             alert.setHeaderText(e.getMessage());
             alert.showAndWait();
+        }*/
+        textArea.setText("");
+    }
+
+    public void handleSendByUdpAction(ActionEvent actionEvent) {
+        if (textArea.getText().trim().equals("")) return;
+        Message message = initializeMessage();
+        try {
+            ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+            ObjectOutputStream os = new ObjectOutputStream(byteStream);
+            os.writeObject(message);
+            byte[] serializedMessage = byteStream.toByteArray();
+            DatagramPacket dp = new DatagramPacket(serializedMessage, serializedMessage.length,
+                    InetAddress.getByName(appController.getServerName()), 4444);
+            appController.getUdpsocket().send(dp);
+            byteStream.close();
+        } catch (IOException e) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("UDP Send Error");
+            alert.setHeaderText(e.getMessage());
+            alert.showAndWait();
         }
         textArea.setText("");
     }
 
     public void setClientName(String clientName) {
         this.clientName = clientName;
+    }
+
+    public void setAppController(AppController appController) {
+        this.appController = appController;
+    }
+
+    public void setInfoList(List<DatagramSocketInfo> infoList) {
+        this.infoList = infoList;
     }
 
     private Message initializeMessage() {

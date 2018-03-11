@@ -1,9 +1,14 @@
 package socketChatServer;
 
+import socketChatServer.listeners.TcpContactThread;
+import socketChatServer.listeners.UdpListenerThread;
+
 import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Server {
     private ServerSocket tcpSocket;
@@ -11,10 +16,11 @@ public class Server {
     private List<Socket> tcpClients;
     private final int portNumber = 4444;
     private UdpListenerThread udpListenerThread;
+    private ExecutorService threadPool;
 
     public static void main(String args[]) {
         Server server = new Server();
-//        server.setupUdpListener();
+        server.setupUdpListener();
         server.listenLoop();
     }
 
@@ -28,11 +34,11 @@ public class Server {
             System.out.println(e.getMessage());
         }
         tcpClients = new ArrayList<>();
+        threadPool = Executors.newFixedThreadPool(20);
     }
 
     private void listenLoop() {
         Socket client;
-        TcpContactThread tcpContactThread;
         while (true) {
             client = null;
             try {
@@ -42,10 +48,10 @@ public class Server {
             }
             if (client != null) {
                 tcpClients.add(client);
-                tcpContactThread = new TcpContactThread(client, tcpClients);
-                tcpContactThread.start();
+                threadPool.submit(new TcpContactThread(client, tcpClients));
             }
         }
+
     }
 
     private void setupUdpListener() {

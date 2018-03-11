@@ -19,10 +19,9 @@ public class TcpListenerThread extends Thread {
 
     @Override
     public void run() {
-        ObjectInputStream is;
         while (true) {
             try {
-                is = new ObjectInputStream(socket.getInputStream());
+                ObjectInputStream is = new ObjectInputStream(socket.getInputStream());
                 Message receivedMessage = (Message) is.readObject();
                 System.out.println("Received message by TCP from: " + receivedMessage.name);
                 receivedMessage.howDelivered = "TCP";

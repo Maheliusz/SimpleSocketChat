@@ -1,5 +1,6 @@
 package socketChatClient.controller;
 
+import containers.DatagramSocketInfo;
 import containers.Message;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -11,11 +12,13 @@ import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import socketChatClient.Client;
 import socketChatClient.listeners.TcpListenerThread;
+import socketChatClient.listeners.UdpListenerThread;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 public class AppController {
@@ -24,6 +27,7 @@ public class AppController {
     private Stage primaryStage;
     private String serverName;
     private String clientName;
+    private List<DatagramSocketInfo> infoList;
 
     public AppController(Stage primaryStage) {
         this.primaryStage = primaryStage;
@@ -37,14 +41,16 @@ public class AppController {
         Optional<String> result = dialog.showAndWait();
         result.ifPresent(name -> serverName = name);
 
-        dialog.setTitle("Please enter your id");
-        dialog.setHeaderText("Please enter your id");
-        dialog.setContentText("Please enter your id:");
-        result = dialog.showAndWait();
+        TextInputDialog idDialog = new TextInputDialog("");
+        idDialog.setTitle("Please enter your id");
+        idDialog.setHeaderText("Please enter your id");
+        idDialog.setContentText("Please enter your id:");
+        result = idDialog.showAndWait();
         result.ifPresent(name -> clientName = name);
+
         try {
             tcpsocket = new Socket(serverName, 4444);
-            udpsocket = new DatagramSocket(4445, InetAddress.getByName(serverName));
+            udpsocket = new DatagramSocket();
             this.primaryStage.setTitle("Chat Client");
             FXMLLoader loader = new FXMLLoader();
             loader.setLocation(Client.class.getResource("/socketChatClient/MainWindow.fxml"));
@@ -56,6 +62,11 @@ public class AppController {
 
             ObservableList<Message> messageList = FXCollections.observableArrayList();
             mainWindowController.initializeMessageList(messageList);
+
+            infoList = new ArrayList<>();
+            mainWindowController.setInfoList(infoList);
+            UdpListenerThread udpListenerThread = new UdpListenerThread(udpsocket, messageList, infoList);
+            udpListenerThread.start();
 
             TcpListenerThread tcpListenerThread = new TcpListenerThread(tcpsocket, messageList);
             tcpListenerThread.start();
@@ -83,5 +94,9 @@ public class AppController {
 
     public DatagramSocket getUdpsocket() {
         return udpsocket;
+    }
+
+    public String getServerName() {
+        return serverName;
     }
 }

@@ -8,7 +8,7 @@ public class Message implements Serializable {
     public String message;
     public String name;
     public String howDelivered;
-    public List<DatagramSocketAddress> clients;
+    public List<DatagramSocketInfo> clients;
 
     public Message() {
         clients = new ArrayList<>();

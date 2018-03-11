@@ -1,9 +1,9 @@
 package socketChatClient.listeners;
 
+import containers.DatagramSocketInfo;
 import containers.Message;
 import javafx.application.Platform;
 
-import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -14,10 +14,12 @@ import java.util.List;
 public class UdpListenerThread extends Thread {
     private DatagramSocket socket;
     private List<Message> list;
+    private List<DatagramSocketInfo> infoList;
 
-    public UdpListenerThread(DatagramSocket socket, List<Message> list) {
+    public UdpListenerThread(DatagramSocket socket, List<Message> list, List<DatagramSocketInfo> infoList) {
         this.socket = socket;
         this.list = list;
+        this.infoList = infoList;
     }
 
     @Override
@@ -28,8 +30,10 @@ public class UdpListenerThread extends Thread {
                 byte[] buffer = new byte[5000];
                 DatagramPacket dp = new DatagramPacket(buffer, buffer.length);
                 socket.receive(dp);
-                is = new ObjectInputStream(new BufferedInputStream(new ByteArrayInputStream(buffer)));
+                is = new ObjectInputStream(new ByteArrayInputStream(buffer));
                 Message receivedMessage = (Message) is.readObject();
+                infoList.clear();
+                infoList.addAll(receivedMessage.clients);
                 System.out.println("Received message by UDP from: " + receivedMessage.name);
                 receivedMessage.howDelivered = "UDP";
                 Platform.runLater(() -> list.add(receivedMessage));

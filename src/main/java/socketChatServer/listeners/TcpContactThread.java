@@ -1,4 +1,4 @@
-package socketChatServer;
+package socketChatServer.listeners;
 
 import containers.Message;
 
@@ -8,7 +8,7 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.List;
 
-public class TcpContactThread extends Thread {
+public class TcpContactThread implements Runnable {
     private Socket client;
     private List<Socket> allClients;
 
@@ -19,17 +19,14 @@ public class TcpContactThread extends Thread {
 
     @Override
     public void run() {
-        Message message;
-        ObjectInputStream is;
-        ObjectOutputStream os;
         while (true) {
             try {
-                is = new ObjectInputStream(client.getInputStream());
-                message = (Message) is.readObject();
+                ObjectInputStream is = new ObjectInputStream(client.getInputStream());
+                Message message = (Message) is.readObject();
                 System.out.println("Received message from: " + message.name);
                 for (Socket socket : allClients) {
                     if (!socket.equals(client)) {
-                        os = new ObjectOutputStream(socket.getOutputStream());
+                        ObjectOutputStream os = new ObjectOutputStream(socket.getOutputStream());
                         os.writeObject(message);
                     }
                 }
@@ -41,7 +38,7 @@ public class TcpContactThread extends Thread {
                 } catch (IOException e1) {
                     System.out.println(e1.getMessage());
                 }
-                System.out.println(this.getName() + " ending work");
+                System.out.println("Thread responsible for " + client.getInetAddress().toString() + " ending work");
                 return;
             }
         }
