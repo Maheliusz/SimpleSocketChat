@@ -1,6 +1,5 @@
 package socketChatClient.controller;
 
-import containers.DatagramSocketInfo;
 import containers.Message;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -15,8 +14,6 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.List;
 
 public class MainWindowController {
     @FXML
@@ -26,7 +23,7 @@ public class MainWindowController {
 
     private AppController appController;
     private String clientName;
-    private List<DatagramSocketInfo> infoList;
+    private int multicastPortNumber;
 
     public void initializeMessageList(ObservableList<Message> sourceList) {
         messageList.setCellFactory(lv -> new ListCell<Message>() {
@@ -44,36 +41,37 @@ public class MainWindowController {
         if (textArea.getText().trim().equals("")) return;
         Message message = initializeMessage();
         try {
-            ObjectOutputStream os = new ObjectOutputStream(appController.getTcpsocket().getOutputStream());
+            ObjectOutputStream os = new ObjectOutputStream(appController.getTcpSocket().getOutputStream());
             os.writeObject(message);
         } catch (IOException e) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("TCP Send Error");
             alert.setHeaderText(e.getMessage());
             alert.showAndWait();
+            appController.exit();
         }
         textArea.setText("");
     }
 
     public void handleMulticastSendAction(ActionEvent actionEvent) {
         if (textArea.getText().trim().equals("")) return;
-        /*Message message = initializeMessage();
+        Message message = initializeMessage();
         try {
-            message.message = Character.toString((char) 0x02);
             ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
             ObjectOutputStream os = new ObjectOutputStream(byteStream);
             os.writeObject(message);
             byte[] serializedMessage = byteStream.toByteArray();
             DatagramPacket dp = new DatagramPacket(serializedMessage, serializedMessage.length,
-                    appController.getUdpsocket().getInetAddress(), appController.getUdpsocket().getPort());
-            appController.getUdpsocket().send(dp);
+                    appController.getMulticastSocket().getInterface(), multicastPortNumber);
+            appController.getMulticastSocket().send(dp);
             byteStream.close();
         } catch (IOException e) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("UDP Send Error");
+            alert.setTitle("Multicast UDP Send Error");
             alert.setHeaderText(e.getMessage());
             alert.showAndWait();
-        }*/
+            appController.exit();
+        }
         textArea.setText("");
     }
 
@@ -87,13 +85,14 @@ public class MainWindowController {
             byte[] serializedMessage = byteStream.toByteArray();
             DatagramPacket dp = new DatagramPacket(serializedMessage, serializedMessage.length,
                     InetAddress.getByName(appController.getServerName()), 4444);
-            appController.getUdpsocket().send(dp);
+            appController.getUdpSocket().send(dp);
             byteStream.close();
         } catch (IOException e) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("UDP Send Error");
             alert.setHeaderText(e.getMessage());
             alert.showAndWait();
+            appController.exit();
         }
         textArea.setText("");
     }
@@ -106,16 +105,16 @@ public class MainWindowController {
         this.appController = appController;
     }
 
-    public void setInfoList(List<DatagramSocketInfo> infoList) {
-        this.infoList = infoList;
-    }
 
     private Message initializeMessage() {
         Message message = new Message();
         message.name = clientName;
         message.message = textArea.getText();
-        message.clients = new ArrayList<>();
         message.howDelivered = "";
         return message;
+    }
+
+    public void setMulticastPortNumber(int multicastPortNumber) {
+        this.multicastPortNumber = multicastPortNumber;
     }
 }

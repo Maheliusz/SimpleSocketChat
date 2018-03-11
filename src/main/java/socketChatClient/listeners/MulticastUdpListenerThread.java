@@ -7,16 +7,16 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.DatagramPacket;
-import java.net.DatagramSocket;
+import java.net.MulticastSocket;
 import java.util.List;
 
-public class UdpListenerThread extends Thread {
-    private DatagramSocket socket;
+public class MulticastUdpListenerThread extends Thread {
+    private MulticastSocket socket;
     private List<Message> list;
 
-    public UdpListenerThread(DatagramSocket socket, List<Message> list) {
-        this.socket = socket;
-        this.list = list;
+    public MulticastUdpListenerThread(MulticastSocket multicastSocket, List<Message> list) {
+        this.socket = multicastSocket;
+        this.list=list;
     }
 
     @Override
@@ -28,12 +28,12 @@ public class UdpListenerThread extends Thread {
                 socket.receive(dp);
                 ObjectInputStream is = new ObjectInputStream(new ByteArrayInputStream(buffer));
                 Message receivedMessage = (Message) is.readObject();
-                System.out.println("Received message by UDP from: " + receivedMessage.name);
-                receivedMessage.howDelivered = "UDP";
+                System.out.println("Received message by M-UDP from: " + receivedMessage.name);
+                receivedMessage.howDelivered = "M-UDP";
                 Platform.runLater(() -> list.add(receivedMessage));
             } catch (IOException | ClassNotFoundException e) {
                 System.out.println(e.getMessage());
-                System.out.println("UdpListenerThread ends work");
+                System.out.println("MulticastUdpListenerThread ends work");
                 return;
             }
         }

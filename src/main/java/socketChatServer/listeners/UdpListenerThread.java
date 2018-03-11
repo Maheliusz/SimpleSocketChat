@@ -49,10 +49,8 @@ public class UdpListenerThread extends Thread {
                         }
                     }
                 }
-                message.clients.clear();
-                message.clients.addAll(addresses.stream().filter(element -> !(element.inetAddress.equals(packet.getAddress()) &&
-                        element.port == packet.getPort())).collect(Collectors.toList()));
-                for (DatagramSocketInfo info : message.clients) {
+                for (DatagramSocketInfo info : addresses.stream().filter(element -> !(element.inetAddress.equals(packet.getAddress()) &&
+                        element.port == packet.getPort())).collect(Collectors.toList())) {
                         packet.setAddress(info.inetAddress);
                         packet.setPort(info.port);
                         udpSocket.send(packet);
