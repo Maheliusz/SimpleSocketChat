@@ -95,10 +95,10 @@ public class AppController {
             ObservableList<Message> messageList = FXCollections.observableArrayList();
             mainWindowController.initializeMessageList(messageList);
 
-            udpListenerThread = new UdpListenerThread(this, messageList, udpSocket);
+            udpListenerThread = new UdpListenerThread(messageList, udpSocket);
             udpListenerThread.start();
 
-            tcpListenerThread = new TcpListenerThread(this, messageList, tcpSocket);
+            tcpListenerThread = new TcpListenerThread(messageList, tcpSocket);
             tcpListenerThread.start();
 
             pinger = new Pinger(this, serverName, serverPort, udpSocket);

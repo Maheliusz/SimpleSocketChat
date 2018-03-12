@@ -31,8 +31,6 @@ public class UdpListenerThread extends Thread {
                     System.out.println(info.nickname + " timed out. Removing client.");
                 }
             }
-            DatagramSocketInfo sender = new DatagramSocketInfo(packet.getPort(),
-                    packet.getAddress(), "sender", 0);
             try {
                 udpSocket.receive(packet);
                 ObjectInputStream is = new ObjectInputStream(new ByteArrayInputStream(receiveBuffer));

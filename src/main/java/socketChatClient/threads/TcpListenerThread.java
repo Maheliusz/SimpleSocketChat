@@ -2,7 +2,6 @@ package socketChatClient.threads;
 
 import containers.Message;
 import javafx.application.Platform;
-import socketChatClient.controller.AppController;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -10,12 +9,10 @@ import java.net.Socket;
 import java.util.List;
 
 public class TcpListenerThread extends Thread {
-    private AppController appController;
     private List<Message> list;
     private Socket tcpSocket;
 
-    public TcpListenerThread(AppController appController, List<Message> list, Socket tcpSocket) {
-        this.appController = appController;
+    public TcpListenerThread(List<Message> list, Socket tcpSocket) {
         this.list = list;
         this.tcpSocket = tcpSocket;
     }

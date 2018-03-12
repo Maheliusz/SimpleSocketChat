@@ -24,7 +24,6 @@ public class MainWindowController {
 
     private AppController appController;
     private String clientName;
-    private int multicastPortNumber;
     private List<Message> messageList;
     private int serverPort;
     private Socket tcpSocket;
@@ -125,10 +124,6 @@ public class MainWindowController {
         return message;
     }
 
-    public void setMulticastPortNumber(int multicastPortNumber) {
-        this.multicastPortNumber = multicastPortNumber;
-    }
-
     public void printMessage(Message message) {
         message.howDelivered = "YOU - " + message.howDelivered;
         Platform.runLater(() -> messageList.add(message));
@@ -136,11 +131,6 @@ public class MainWindowController {
 
     public void setServerPort(int serverPort) {
         this.serverPort = serverPort;
-    }
-
-    @FXML
-    public void exitApplication(ActionEvent event) {
-        appController.exit();
     }
 
     public void setTcpSocket(Socket tcpSocket) {
