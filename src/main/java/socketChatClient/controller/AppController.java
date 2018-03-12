@@ -11,13 +11,12 @@ import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import socketChatClient.Client;
-import socketChatClient.listeners.MulticastUdpListenerThread;
-import socketChatClient.listeners.TcpListenerThread;
-import socketChatClient.listeners.UdpListenerThread;
+import socketChatClient.threads.Pinger;
+import socketChatClient.threads.TcpListenerThread;
+import socketChatClient.threads.UdpListenerThread;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.Socket;
 import java.util.List;
@@ -29,9 +28,14 @@ public class AppController {
     private MulticastSocket multicastSocket;
     private Stage primaryStage;
     private String serverName;
+    private int serverPort;
     private String clientName;
     private List<DatagramSocketInfo> infoList;
-    private int multicastPortNumber;
+    private int multicastPortNumber = 14445;
+    private String groupAddressString = "233.233.233.233";
+    private TcpListenerThread tcpListenerThread;
+    private UdpListenerThread udpListenerThread;
+    private Pinger pinger;
 
     public AppController(Stage primaryStage) {
         this.primaryStage = primaryStage;
@@ -45,6 +49,23 @@ public class AppController {
         Optional<String> result = dialog.showAndWait();
         result.ifPresent(name -> serverName = name);
 
+        TextInputDialog portDialog = new TextInputDialog("");
+        portDialog.setTitle("Please enter server port");
+        portDialog.setHeaderText("Please enter server port");
+        portDialog.setContentText("Please enter server port:");
+        result = portDialog.showAndWait();
+        try {
+            result.ifPresent(port -> serverPort = Integer.parseInt(port));
+        } catch (NumberFormatException e){
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Error");
+            alert.setHeaderText(e.getMessage());
+            alert.setContentText("String isn't number");
+            alert.showAndWait();
+            exit();
+            return;
+        }
+
         TextInputDialog idDialog = new TextInputDialog("");
         idDialog.setTitle("Please enter your id");
         idDialog.setHeaderText("Please enter your id");
@@ -53,11 +74,12 @@ public class AppController {
         result.ifPresent(name -> clientName = name);
 
         try {
-            tcpSocket = new Socket(serverName, 4444);
-            udpSocket = new DatagramSocket();
-            multicastPortNumber = 4445;
-            multicastSocket = new MulticastSocket(multicastPortNumber);
-            multicastSocket.joinGroup(InetAddress.getByName("233.233.233.233"));
+            tcpSocket = new Socket(serverName, serverPort);
+            udpSocket = new DatagramSocket(tcpSocket.getLocalPort());
+//            multicastSocket = new MulticastSocket();
+//            multicastSocket.setReuseAddress(true);
+//            multicastSocket.bind(new InetSocketAddress(multicastPortNumber));
+//            multicastSocket.joinGroup(InetAddress.getByName(groupAddressString));
             this.primaryStage.setTitle("Chat Client");
             FXMLLoader loader = new FXMLLoader();
             loader.setLocation(Client.class.getResource("/socketChatClient/MainWindow.fxml"));
@@ -67,18 +89,22 @@ public class AppController {
             mainWindowController.setAppController(this);
             mainWindowController.setClientName(clientName);
             mainWindowController.setMulticastPortNumber(multicastPortNumber);
+            mainWindowController.setServerPort(serverPort);
 
             ObservableList<Message> messageList = FXCollections.observableArrayList();
             mainWindowController.initializeMessageList(messageList);
 
-            UdpListenerThread udpListenerThread = new UdpListenerThread(udpSocket, messageList);
+            udpListenerThread = new UdpListenerThread(this, messageList);
             udpListenerThread.start();
 
-            TcpListenerThread tcpListenerThread = new TcpListenerThread(tcpSocket, messageList);
+            tcpListenerThread = new TcpListenerThread(this, messageList);
             tcpListenerThread.start();
 
-            MulticastUdpListenerThread multicastThread = new MulticastUdpListenerThread(multicastSocket, messageList);
-            multicastThread.start();
+            pinger = new Pinger(this, serverName, serverPort);
+            pinger.start();
+
+//            MulticastUdpListenerThread multicastThread = new MulticastUdpListenerThread(multicastSocket, messageList);
+//            multicastThread.start();
 
             Scene scene = new Scene(rootLayout);
             primaryStage.setScene(scene);
@@ -95,21 +121,24 @@ public class AppController {
     }
 
     public void exit() {
-        multicastSocket.close();
         try {
             tcpSocket.close();
-        } catch (IOException e) {
+            multicastSocket.close();
+            udpSocket.close();
+            tcpListenerThread.interrupt();
+            udpListenerThread.interrupt();
+            pinger.interrupt();
+            primaryStage.close();
+        } catch (IOException | NullPointerException e) {
             System.out.println(e.getMessage());
         }
-        udpSocket.close();
-        primaryStage.close();
     }
 
-    public Socket getTcpSocket() {
+    public synchronized Socket getTcpSocket() {
         return tcpSocket;
     }
 
-    public DatagramSocket getUdpSocket() {
+    public synchronized DatagramSocket getUdpSocket() {
         return udpSocket;
     }
 
@@ -119,5 +148,9 @@ public class AppController {
 
     public MulticastSocket getMulticastSocket() {
         return multicastSocket;
+    }
+
+    public String getClientName() {
+        return clientName;
     }
 }

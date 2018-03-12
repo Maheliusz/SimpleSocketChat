@@ -49,12 +49,14 @@ public class UdpListenerThread extends Thread {
                         }
                     }
                 }
-                for (DatagramSocketInfo info : addresses.stream().filter(element -> !(element.inetAddress.equals(packet.getAddress()) &&
-                        element.port == packet.getPort())).collect(Collectors.toList())) {
+                if (!message.message.startsWith(String.valueOf((char) (0x0)))) {
+                    for (DatagramSocketInfo info : addresses.stream().filter(element -> !(element.inetAddress.equals(packet.getAddress()) &&
+                            element.port == packet.getPort())).collect(Collectors.toList())) {
                         packet.setAddress(info.inetAddress);
                         packet.setPort(info.port);
                         udpSocket.send(packet);
-                        System.out.println("Wyslano datagram");
+                        System.out.println("Datagram sent");
+                    }
                 }
             } catch (IOException | ClassNotFoundException e) {
                 System.out.println(e.getMessage());

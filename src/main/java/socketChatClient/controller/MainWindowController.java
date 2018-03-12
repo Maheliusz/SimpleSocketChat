@@ -1,6 +1,7 @@
 package socketChatClient.controller;
 
 import containers.Message;
+import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -14,19 +15,23 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
+import java.util.List;
 
 public class MainWindowController {
     @FXML
     private TextArea textArea;
     @FXML
-    private ListView<Message> messageList;
+    private ListView<Message> messageListView;
 
     private AppController appController;
     private String clientName;
     private int multicastPortNumber;
+    private List<Message> messageList;
+    private int serverPort;
 
     public void initializeMessageList(ObservableList<Message> sourceList) {
-        messageList.setCellFactory(lv -> new ListCell<Message>() {
+        messageList = sourceList;
+        messageListView.setCellFactory(lv -> new ListCell<Message>() {
             @Override
             public void updateItem(Message item, boolean empty) {
                 super.updateItem(item, empty);
@@ -34,15 +39,16 @@ public class MainWindowController {
                         + " wrote:\n" + item.message) : null);
             }
         });
-        messageList.setItems(sourceList);
+        messageListView.setItems(sourceList);
     }
 
     public void handleSendByTcpAction(ActionEvent actionEvent) {
         if (textArea.getText().trim().equals("")) return;
-        Message message = initializeMessage();
+        Message message = initializeMessage("TCP");
         try {
             ObjectOutputStream os = new ObjectOutputStream(appController.getTcpSocket().getOutputStream());
             os.writeObject(message);
+            printMessage(message);
         } catch (IOException e) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("TCP Send Error");
@@ -55,38 +61,43 @@ public class MainWindowController {
 
     public void handleMulticastSendAction(ActionEvent actionEvent) {
         if (textArea.getText().trim().equals("")) return;
-        Message message = initializeMessage();
+        /*
+        Message message = initializeMessage("M-UDP");
         try {
             ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
             ObjectOutputStream os = new ObjectOutputStream(byteStream);
             os.writeObject(message);
             byte[] serializedMessage = byteStream.toByteArray();
             DatagramPacket dp = new DatagramPacket(serializedMessage, serializedMessage.length,
-                    appController.getMulticastSocket().getInterface(), multicastPortNumber);
+                    appController.getMulticastSocket().getInterface(), appController.getMulticastSocket().getPort());
             appController.getMulticastSocket().send(dp);
             byteStream.close();
+            printMessage(message);
         } catch (IOException e) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Multicast UDP Send Error");
             alert.setHeaderText(e.getMessage());
             alert.showAndWait();
+            e.printStackTrace();
             appController.exit();
         }
+        */
         textArea.setText("");
     }
 
     public void handleSendByUdpAction(ActionEvent actionEvent) {
         if (textArea.getText().trim().equals("")) return;
-        Message message = initializeMessage();
+        Message message = initializeMessage("UDP");
         try {
             ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
             ObjectOutputStream os = new ObjectOutputStream(byteStream);
             os.writeObject(message);
             byte[] serializedMessage = byteStream.toByteArray();
             DatagramPacket dp = new DatagramPacket(serializedMessage, serializedMessage.length,
-                    InetAddress.getByName(appController.getServerName()), 4444);
+                    InetAddress.getByName(appController.getServerName()), serverPort);
             appController.getUdpSocket().send(dp);
             byteStream.close();
+            printMessage(message);
         } catch (IOException e) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("UDP Send Error");
@@ -106,15 +117,24 @@ public class MainWindowController {
     }
 
 
-    private Message initializeMessage() {
+    private Message initializeMessage(String howDelivered) {
         Message message = new Message();
         message.name = clientName;
         message.message = textArea.getText();
-        message.howDelivered = "";
+        message.howDelivered = howDelivered;
         return message;
     }
 
     public void setMulticastPortNumber(int multicastPortNumber) {
         this.multicastPortNumber = multicastPortNumber;
+    }
+
+    public void printMessage(Message message) {
+        message.howDelivered = "YOU - " + message.howDelivered;
+        Platform.runLater(() -> messageList.add(message));
+    }
+
+    public void setServerPort(int serverPort) {
+        this.serverPort = serverPort;
     }
 }

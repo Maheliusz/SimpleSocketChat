@@ -1,19 +1,19 @@
-package socketChatClient.listeners;
+package socketChatClient.threads;
 
 import containers.Message;
 import javafx.application.Platform;
+import socketChatClient.controller.AppController;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.net.Socket;
 import java.util.List;
 
 public class TcpListenerThread extends Thread {
-    private Socket socket;
+    private AppController appController;
     private List<Message> list;
 
-    public TcpListenerThread(Socket socket, List<Message> list) {
-        this.socket = socket;
+    public TcpListenerThread(AppController appController, List<Message> list) {
+        this.appController = appController;
         this.list = list;
     }
 
@@ -21,10 +21,9 @@ public class TcpListenerThread extends Thread {
     public void run() {
         while (true) {
             try {
-                ObjectInputStream is = new ObjectInputStream(socket.getInputStream());
+                ObjectInputStream is = new ObjectInputStream(appController.getTcpSocket().getInputStream());
                 Message receivedMessage = (Message) is.readObject();
                 System.out.println("Received message by TCP from: " + receivedMessage.name);
-                receivedMessage.howDelivered = "TCP";
                 Platform.runLater(() -> list.add(receivedMessage));
             } catch (IOException | ClassNotFoundException e) {
                 System.out.println(e.getMessage());

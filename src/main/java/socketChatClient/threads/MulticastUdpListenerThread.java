@@ -1,4 +1,4 @@
-package socketChatClient.listeners;
+package socketChatClient.threads;
 
 import containers.Message;
 import javafx.application.Platform;
@@ -7,15 +7,15 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.DatagramPacket;
-import java.net.DatagramSocket;
+import java.net.MulticastSocket;
 import java.util.List;
 
-public class UdpListenerThread extends Thread {
-    private DatagramSocket socket;
+public class MulticastUdpListenerThread extends Thread {
+    private MulticastSocket socket;
     private List<Message> list;
 
-    public UdpListenerThread(DatagramSocket socket, List<Message> list) {
-        this.socket = socket;
+    public MulticastUdpListenerThread(MulticastSocket multicastSocket, List<Message> list) {
+        this.socket = multicastSocket;
         this.list = list;
     }
 
@@ -28,12 +28,11 @@ public class UdpListenerThread extends Thread {
                 socket.receive(dp);
                 ObjectInputStream is = new ObjectInputStream(new ByteArrayInputStream(buffer));
                 Message receivedMessage = (Message) is.readObject();
-                System.out.println("Received message by UDP from: " + receivedMessage.name);
-                receivedMessage.howDelivered = "UDP";
+                System.out.println("Received message by M-UDP from: " + receivedMessage.name);
                 Platform.runLater(() -> list.add(receivedMessage));
             } catch (IOException | ClassNotFoundException e) {
                 System.out.println(e.getMessage());
-                System.out.println("UdpListenerThread ends work");
+                System.out.println("MulticastUdpListenerThread ends work");
                 return;
             }
         }

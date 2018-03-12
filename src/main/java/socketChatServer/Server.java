@@ -35,6 +35,23 @@ public class Server {
         }
         tcpClients = new ArrayList<>();
         threadPool = Executors.newFixedThreadPool(20);
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            tcpClients.forEach(socket -> {
+                try {
+                    socket.close();
+                } catch (IOException e) {
+                    System.out.println(e.getMessage());
+                }
+            });
+            try {
+                tcpSocket.close();
+            } catch (IOException e) {
+                System.out.println(e.getMessage());
+            }
+            udpSocket.close();
+            threadPool.shutdown();
+            udpListenerThread.interrupt();
+        }));
     }
 
     private void listenLoop() {
