@@ -11,5 +11,5 @@
     <Button prefHeight="80.0" prefWidth="185.0" layoutY="590.0" layoutX="15.0" onAction="#handleSendByTcpAction" text="Send by TCP"/>
     <Button prefHeight="80.0" prefWidth="185.0" layoutY="590.0" layoutX="205.0" onAction="#handleSendByUdpAction" text="Send by UDP"/>
     <Button prefHeight="80.0" prefWidth="185.0" layoutY="590.0" layoutX="395.0" onAction="#handleMulticastSendAction"
-            text="Send by UDP Multicast" disable="true"/>
+            text="Send by UDP Multicast"/>
 </AnchorPane>

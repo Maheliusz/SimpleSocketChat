@@ -8,16 +8,19 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.util.List;
 
 public class UdpListenerThread extends Thread {
     private AppController appController;
     private List<Message> list;
     private Thread pinger;
+    private DatagramSocket udpSocket;
 
-    public UdpListenerThread(AppController appController, List<Message> list) {
+    public UdpListenerThread(AppController appController, List<Message> list, DatagramSocket udpSocket) {
         this.appController = appController;
         this.list = list;
+        this.udpSocket = udpSocket;
     }
 
     @Override
@@ -29,7 +32,7 @@ public class UdpListenerThread extends Thread {
             try {
                 byte[] buffer = new byte[5000];
                 DatagramPacket dp = new DatagramPacket(buffer, buffer.length);
-                appController.getUdpSocket().receive(dp);
+                udpSocket.receive(dp);
                 ObjectInputStream is = new ObjectInputStream(new ByteArrayInputStream(buffer));
                 Message receivedMessage = (Message) is.readObject();
                 System.out.println("Received message by UDP from: " + receivedMessage.name);

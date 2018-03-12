@@ -13,8 +13,7 @@ import javafx.scene.control.TextArea;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
-import java.net.DatagramPacket;
-import java.net.InetAddress;
+import java.net.*;
 import java.util.List;
 
 public class MainWindowController {
@@ -28,6 +27,9 @@ public class MainWindowController {
     private int multicastPortNumber;
     private List<Message> messageList;
     private int serverPort;
+    private Socket tcpSocket;
+    private DatagramSocket udpSocket;
+    private MulticastSocket multicastSocket;
 
     public void initializeMessageList(ObservableList<Message> sourceList) {
         messageList = sourceList;
@@ -46,7 +48,7 @@ public class MainWindowController {
         if (textArea.getText().trim().equals("")) return;
         Message message = initializeMessage("TCP");
         try {
-            ObjectOutputStream os = new ObjectOutputStream(appController.getTcpSocket().getOutputStream());
+            ObjectOutputStream os = new ObjectOutputStream(tcpSocket.getOutputStream());
             os.writeObject(message);
             printMessage(message);
         } catch (IOException e) {
@@ -61,7 +63,6 @@ public class MainWindowController {
 
     public void handleMulticastSendAction(ActionEvent actionEvent) {
         if (textArea.getText().trim().equals("")) return;
-        /*
         Message message = initializeMessage("M-UDP");
         try {
             ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
@@ -69,8 +70,8 @@ public class MainWindowController {
             os.writeObject(message);
             byte[] serializedMessage = byteStream.toByteArray();
             DatagramPacket dp = new DatagramPacket(serializedMessage, serializedMessage.length,
-                    appController.getMulticastSocket().getInterface(), appController.getMulticastSocket().getPort());
-            appController.getMulticastSocket().send(dp);
+                    InetAddress.getByName(appController.getServerName()), appController.getMulticastPortNumber());
+            multicastSocket.send(dp);
             byteStream.close();
             printMessage(message);
         } catch (IOException e) {
@@ -81,7 +82,6 @@ public class MainWindowController {
             e.printStackTrace();
             appController.exit();
         }
-        */
         textArea.setText("");
     }
 
@@ -95,7 +95,7 @@ public class MainWindowController {
             byte[] serializedMessage = byteStream.toByteArray();
             DatagramPacket dp = new DatagramPacket(serializedMessage, serializedMessage.length,
                     InetAddress.getByName(appController.getServerName()), serverPort);
-            appController.getUdpSocket().send(dp);
+            udpSocket.send(dp);
             byteStream.close();
             printMessage(message);
         } catch (IOException e) {
@@ -136,5 +136,22 @@ public class MainWindowController {
 
     public void setServerPort(int serverPort) {
         this.serverPort = serverPort;
+    }
+
+    @FXML
+    public void exitApplication(ActionEvent event) {
+        appController.exit();
+    }
+
+    public void setTcpSocket(Socket tcpSocket) {
+        this.tcpSocket = tcpSocket;
+    }
+
+    public void setUdpSocket(DatagramSocket udpSocket) {
+        this.udpSocket = udpSocket;
+    }
+
+    public void setMulticastSocket(MulticastSocket multicastSocket) {
+        this.multicastSocket = multicastSocket;
     }
 }

@@ -1,5 +1,6 @@
 package socketChatServer;
 
+import containers.DatagramSocketInfo;
 import socketChatServer.listeners.TcpContactThread;
 import socketChatServer.listeners.UdpListenerThread;
 
@@ -17,6 +18,7 @@ public class Server {
     private final int portNumber = 4444;
     private UdpListenerThread udpListenerThread;
     private ExecutorService threadPool;
+    private List<DatagramSocketInfo> addresses;
 
     public static void main(String args[]) {
         Server server = new Server();
@@ -33,6 +35,7 @@ public class Server {
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
+        addresses = new ArrayList<>();
         tcpClients = new ArrayList<>();
         threadPool = Executors.newFixedThreadPool(20);
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -72,8 +75,11 @@ public class Server {
     }
 
     private void setupUdpListener() {
-        udpListenerThread = new UdpListenerThread(udpSocket);
+        udpListenerThread = new UdpListenerThread(udpSocket, this);
         udpListenerThread.start();
     }
 
+    public synchronized List<DatagramSocketInfo> getAddresses() {
+        return addresses;
+    }
 }

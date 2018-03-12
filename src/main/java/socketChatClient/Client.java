@@ -16,4 +16,10 @@ public class Client extends Application {
         this.appController = new AppController(primaryStage);
         this.appController.init();
     }
+
+    @Override
+    public void stop() throws Exception {
+        appController.exit();
+        super.stop();
+    }
 }

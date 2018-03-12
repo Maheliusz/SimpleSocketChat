@@ -1,6 +1,5 @@
 package socketChatClient.controller;
 
-import containers.DatagramSocketInfo;
 import containers.Message;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -11,15 +10,16 @@ import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import socketChatClient.Client;
+import socketChatClient.threads.MulticastUdpListenerThread;
 import socketChatClient.threads.Pinger;
 import socketChatClient.threads.TcpListenerThread;
 import socketChatClient.threads.UdpListenerThread;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.Socket;
-import java.util.List;
 import java.util.Optional;
 
 public class AppController {
@@ -30,9 +30,8 @@ public class AppController {
     private String serverName;
     private int serverPort;
     private String clientName;
-    private List<DatagramSocketInfo> infoList;
-    private int multicastPortNumber = 14445;
-    private String groupAddressString = "233.233.233.233";
+    private int multicastPortNumber = 4446;
+    private String groupAddressString = "234.234.234.234";
     private TcpListenerThread tcpListenerThread;
     private UdpListenerThread udpListenerThread;
     private Pinger pinger;
@@ -76,10 +75,9 @@ public class AppController {
         try {
             tcpSocket = new Socket(serverName, serverPort);
             udpSocket = new DatagramSocket(tcpSocket.getLocalPort());
-//            multicastSocket = new MulticastSocket();
-//            multicastSocket.setReuseAddress(true);
-//            multicastSocket.bind(new InetSocketAddress(multicastPortNumber));
-//            multicastSocket.joinGroup(InetAddress.getByName(groupAddressString));
+            multicastSocket = new MulticastSocket(multicastPortNumber);
+            multicastSocket.setReuseAddress(true);
+            multicastSocket.joinGroup(InetAddress.getByName(groupAddressString));
             this.primaryStage.setTitle("Chat Client");
             FXMLLoader loader = new FXMLLoader();
             loader.setLocation(Client.class.getResource("/socketChatClient/MainWindow.fxml"));
@@ -87,6 +85,9 @@ public class AppController {
 
             MainWindowController mainWindowController = loader.getController();
             mainWindowController.setAppController(this);
+            mainWindowController.setTcpSocket(tcpSocket);
+            mainWindowController.setUdpSocket(udpSocket);
+            mainWindowController.setMulticastSocket(multicastSocket);
             mainWindowController.setClientName(clientName);
             mainWindowController.setMulticastPortNumber(multicastPortNumber);
             mainWindowController.setServerPort(serverPort);
@@ -94,22 +95,22 @@ public class AppController {
             ObservableList<Message> messageList = FXCollections.observableArrayList();
             mainWindowController.initializeMessageList(messageList);
 
-            udpListenerThread = new UdpListenerThread(this, messageList);
+            udpListenerThread = new UdpListenerThread(this, messageList, udpSocket);
             udpListenerThread.start();
 
-            tcpListenerThread = new TcpListenerThread(this, messageList);
+            tcpListenerThread = new TcpListenerThread(this, messageList, tcpSocket);
             tcpListenerThread.start();
 
-            pinger = new Pinger(this, serverName, serverPort);
+            pinger = new Pinger(this, serverName, serverPort, udpSocket);
             pinger.start();
 
-//            MulticastUdpListenerThread multicastThread = new MulticastUdpListenerThread(multicastSocket, messageList);
-//            multicastThread.start();
+            MulticastUdpListenerThread multicastThread = new MulticastUdpListenerThread(multicastSocket, messageList);
+            multicastThread.start();
 
             Scene scene = new Scene(rootLayout);
             primaryStage.setScene(scene);
             primaryStage.show();
-
+            Runtime.getRuntime().addShutdownHook(new Thread(this::exit));
         } catch (IOException e) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Error");
@@ -125,32 +126,24 @@ public class AppController {
             tcpSocket.close();
             multicastSocket.close();
             udpSocket.close();
-            tcpListenerThread.interrupt();
-            udpListenerThread.interrupt();
-            pinger.interrupt();
+            tcpListenerThread.stop();
+            udpListenerThread.stop();
+            pinger.stop();
             primaryStage.close();
-        } catch (IOException | NullPointerException e) {
+        } catch (Exception e) {
             System.out.println(e.getMessage());
         }
-    }
-
-    public synchronized Socket getTcpSocket() {
-        return tcpSocket;
-    }
-
-    public synchronized DatagramSocket getUdpSocket() {
-        return udpSocket;
     }
 
     public String getServerName() {
         return serverName;
     }
 
-    public MulticastSocket getMulticastSocket() {
-        return multicastSocket;
-    }
-
     public String getClientName() {
         return clientName;
+    }
+
+    public int getMulticastPortNumber() {
+        return multicastPortNumber;
     }
 }
