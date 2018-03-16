@@ -89,7 +89,6 @@ public class AppController {
             mainWindowController.setUdpSocket(udpSocket);
             mainWindowController.setMulticastSocket(multicastSocket);
             mainWindowController.setClientName(clientName);
-            mainWindowController.setMulticastPortNumber(multicastPortNumber);
             mainWindowController.setServerPort(serverPort);
 
             ObservableList<Message> messageList = FXCollections.observableArrayList();
